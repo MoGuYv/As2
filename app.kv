@@ -1,0 +1,50 @@
+BoxLayout:
+    orientation: "vertical"
+
+    Label:
+        id: status_bar
+        text: "Places to visit: 0"
+        size_hint_y: None
+        height: 40
+
+    BoxLayout:
+        orientation: "horizontal"
+        size_hint_y: None
+        height: 100
+
+        BoxLayout:
+            orientation: "vertical"
+            size_hint_x: 0.3
+            padding: 10
+
+            Label:
+                text: "Add New Place"
+
+            TextInput:
+                id: input_name
+                hint_text: "Name"
+
+            TextInput:
+                id: input_country
+                hint_text: "Country"
+
+            TextInput:
+                id: input_priority
+                hint_text: "Priority"
+
+            Button:
+                text: "Add Place"
+                on_release: app.add_place()
+
+        BoxLayout:
+            id: place_buttons
+            orientation: "vertical"
+            size_hint_x: 0.7
+            padding: 10
+            spacing: 10
+
+    Label:
+        id: bottom_status
+        text: "Welcome to Travel Tracker!"
+        size_hint_y: None
+        height: 40

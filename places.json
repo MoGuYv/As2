@@ -1,0 +1,4 @@
+[
+    {"name": "Eiffel Tower", "country": "France", "priority": 1, "visited": false},
+    {"name": "Great Wall", "country": "China", "priority": 3, "visited": true}
+]
