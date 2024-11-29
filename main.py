@@ -1,114 +1,84 @@
+from kivy.app import App
+from kivy.lang import Builder
+from kivy.uix.button import Button
 from placecollection import PlaceCollection
 from place import Place
 
 
-def display_menu():
-    """Display the main menu for user selection."""
-    print("\nMenu:")
-    print("L - List places")
-    print("A - Add new place")
-    print("M - Mark a place as visited")
-    print("S - Sort places")
-    print("Q - Quit")
+class TravelTrackerApp(App):
+    """Main app for Travel Tracker."""
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.place_collection = PlaceCollection()
 
-def list_places(collection: PlaceCollection):
-    """List all current places, including their visited status."""
-    if not collection.places:
-        print("No places in the list.")
-    else:
-        for i, place in enumerate(collection.places, 1):
-            visited_status = "v" if place.visited else " "
-            print(f"{i}. {visited_status} {place}")
+    def build(self):
+        """Build the Kivy app from the kv file."""
+        self.place_collection.load_places("places.json")
+        self.title = "Travel Tracker 2.0"
+        self.root = Builder.load_file("app.kv")
+        self.create_place_buttons()
+        self.update_status_bar()
+        return self.root
 
+    def create_place_buttons(self):
+        """Create buttons for each place."""
+        self.root.ids.place_buttons.clear_widgets()
+        for place in self.place_collection.places:
+            button = Button(
+                text=str(place),
+                background_color=(0, 1, 0, 1) if place.visited else (1, 0, 0, 1),
+                on_release=lambda btn: self.toggle_visited(btn.text)
+            )
+            self.root.ids.place_buttons.add_widget(button)
 
-def add_place(collection: PlaceCollection):
-    """Add a new place to the list."""
-    name = input("Name: ").strip()
-    while not name:
-        print("Name cannot be blank.")
-        name = input("Name: ").strip()
+    def toggle_visited(self, place_text):
+        """Toggle the visited status of a place."""
+        for place in self.place_collection.places:
+            if str(place) == place_text:
+                if place.visited:
+                    place.mark_unvisited()
+                    self.root.ids.status_bar.text = f"You need to visit {place.name}."
+                else:
+                    place.mark_visited()
+                    self.root.ids.status_bar.text = f"You visited {place.name}. Great travelling!"
+                self.create_place_buttons()
+                self.update_status_bar()
+                return
 
-    country = input("Country: ").strip()
-    while not country:
-        print("Country cannot be blank.")
-        country = input("Country: ").strip()
+    def add_place(self):
+        """Add a new place to the collection."""
+        name = self.root.ids.input_name.text.strip()
+        country = self.root.ids.input_country.text.strip()
+        priority_text = self.root.ids.input_priority.text.strip()
 
-    priority_input = input("Priority: ").strip()
-    while not priority_input.isdigit() or int(priority_input) < 1:
-        if not priority_input.isdigit():
-            print("Please enter a valid number for priority.")
-        elif int(priority_input) < 1:
-            print("Priority must be > 0.")
-        priority_input = input("Priority: ").strip()
+        if not name or not country or not priority_text:
+            self.root.ids.status_bar.text = "All fields must be completed."
+            return
 
-    priority = int(priority_input)
-    new_place = Place(name, country, priority, False)
-    collection.add_place(new_place)
-    print(f"{new_place} added to the list.")
+        if not priority_text.isdigit() or int(priority_text) < 1:
+            self.root.ids.status_bar.text = "Please enter a valid positive number for priority."
+            return
 
+        priority = int(priority_text)
+        new_place = Place(name, country, priority, False)
+        self.place_collection.add_place(new_place)
+        self.create_place_buttons()
+        self.update_status_bar()
+        self.clear_inputs()
+        self.root.ids.status_bar.text = f"{name} in {country} added to the list."
 
-def mark_place_visited(collection: PlaceCollection):
-    """Mark the user-selected place as visited."""
-    if collection.get_unvisited_count() == 0:
-        print("No unvisited places.")
-        return
+    def clear_inputs(self):
+        """Clear the input fields."""
+        self.root.ids.input_name.text = ""
+        self.root.ids.input_country.text = ""
+        self.root.ids.input_priority.text = ""
 
-    list_places(collection)
-    user_input = input("Enter the number of a place to mark as visited: ").strip()
-    valid_input = False
-    while not valid_input:
-        if user_input.isdigit() and 1 <= int(user_input) <= len(collection.places):
-            valid_input = True
-        else:
-            print("Please enter a valid number.")
-            user_input = input("Enter the number of a place to mark as visited: ").strip()
+    def update_status_bar(self):
+        """Update the status bar with the number of unvisited places."""
+        unvisited_count = self.place_collection.get_unvisited_count()
+        self.root.ids.status_bar.text = f"Places to visit: {unvisited_count}"
 
-    choice = int(user_input)
-    place = collection.places[choice - 1]
-    if place.visited:
-        print(f"{place.name} has already been visited.")
-    else:
-        place.mark_visited()
-        print(f"You visited {place.name}. Great travelling!")
-
-
-def sort_places(collection: PlaceCollection):
-    """Sort places by a user-specified attribute."""
-    valid_keys = ["name", "country", "priority"]
-    key = input("Sort by (name/country/priority): ").strip().lower()
-    while key not in valid_keys:
-        print("Invalid sort key. Please choose name, country, or priority.")
-        key = input("Sort by (name/country/priority): ").strip().lower()
-    collection.sort(key)
-    print(f"Places sorted by {key}.")
-
-
-def main():
-    """Main program to control the console menu loop."""
-    collection = PlaceCollection()
-    collection.load_places("places.json")
-    print("Travel Tracker 2.0 - by LuJunwen")
-
-    menu_choice = ""
-    while menu_choice != "Q":
-        display_menu()
-        menu_choice = input(">>> ").strip().upper()
-
-        if menu_choice == "L":
-            list_places(collection)
-        elif menu_choice == "A":
-            add_place(collection)
-        elif menu_choice == "M":
-            mark_place_visited(collection)
-        elif menu_choice == "S":
-            sort_places(collection)
-        elif menu_choice == "Q":
-            collection.save_places("places.json")
-            print("Places saved. Goodbye!")
-        else:
-            print("Invalid menu choice.")
-
-
-if __name__ == "__main__":
-    main()
+    def on_stop(self):
+        """Save places to JSON file when the app closes."""
+        self.place_collection.save_places("places.json")
